@@ -46,6 +46,26 @@
         button:hover {
             background-color: #27ae60;
         }
+        .feedback-controls {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            align-items: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .feedback-counts {
+            display: flex;
+            gap: 12px;
+            font-weight: bold;
+        }
+
+        .feedback-counts span {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
         body {
             background-color: black;
         }
@@ -66,8 +86,19 @@
         <div id="current-website-display">&nbsp;</div>
         <iframe id="website-iframe" src="" title="Random Website Viewer"></iframe>
     </div>
-    <button id="2">Like</button> <button id="2">Dislike</button>        <p>Some websites might be banned on school wifi or not work anymore</p>
+    <div class="feedback-controls">
+        <button id="like-btn">Like</button>
+        <button id="dislike-btn">Dislike</button>
+        <div class="feedback-counts">
+            <span id="like-count">Likes: --</span>
+            <span id="dislike-count">Dislikes: --</span>
+        </div>
+    </div>
+    <p>Some websites might be banned on school wifi or not work anymore</p>
 
+    <!-- Firebase SDKs - you've already included these! -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script>
         const websites = [
             "https://fonts.googleapis.com", "https://facebook.com", "https://twitter.com", "https://google.com",
@@ -322,23 +353,96 @@
             "https://vr.google.com", "https://opinionator.blogs.nytimes.com", "https://ericsson.com"
         ];
 
-        function loadRandomWebsite() {
-            // Select a random index
-            const randomIndex = Math.floor(Math.random() * websites.length);
+        const iframe = document.getElementById('website-iframe');
+        const display = document.getElementById('current-website-display');
+        const likeBtn = document.getElementById('like-btn');
+        const dislikeBtn = document.getElementById('dislike-btn');
+        const likeCountEl = document.getElementById('like-count');
+        const dislikeCountEl = document.getElementById('dislike-count');
 
-            // Get the random URL
-            const randomUrl = websites[randomIndex];
+        // --- START OF FIREBASE CONFIGURATION (YOU MUST UPDATE THESE PLACEHOLDERS) ---
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY_FROM_CONSOLE", // <<< IMPORTANT: Replace with your actual API Key
+            authDomain: "betterweb-b827e.firebaseapp.com",
+            projectId: "betterweb-b827e",
+            storageBucket: "betterweb-b827e.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID_FROM_CONSOLE", // <<< IMPORTANT: Replace with your actual Messaging Sender ID
+            appId: "YOUR_APP_ID_FROM_CONSOLE" // <<< IMPORTANT: Replace with your actual App ID
+        };
+        // --- END OF FIREBASE CONFIGURATION ---
 
-            // Update the iframe source
-            const iframe = document.getElementById('website-iframe');
-            iframe.src = randomUrl;
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const feedbackCollection = db.collection('websiteFeedback');
 
-            // Update the display text
-            const display = document.getElementById('current-website-display');
-            display.textContent = `Displaying: ${randomUrl}`;
+        let currentWebsite = null;
+
+        function sanitizeKey(url) {
+            // Replaces non-alphanumeric characters with underscores to create a valid Firestore document ID
+            return url.replace(/[^a-zA-Z0-9]/g, '_');
         }
 
-        // Load a random website when the page first loads
+        function updateCountLabels(likes, dislikes) {
+            likeCountEl.textContent = `Likes: ${likes}`;
+            dislikeCountEl.textContent = `Dislikes: ${dislikes}`;
+        }
+
+        async function ensureDocument(docRef) {
+            const snapshot = await docRef.get();
+            if (!snapshot.exists) {
+                // If the document doesn't exist, create it with initial counts
+                await docRef.set({ likes: 0, dislikes: 0 });
+                return { likes: 0, dislikes: 0 };
+            }
+            return snapshot.data();
+        }
+
+        async function refreshCounts() {
+            if (!currentWebsite) {
+                updateCountLabels('--', '--');
+                return;
+            }
+            try {
+                const docRef = feedbackCollection.doc(sanitizeKey(currentWebsite));
+                const data = await ensureDocument(docRef); // Ensure document exists before trying to read data
+                updateCountLabels(data.likes ?? 0, data.dislikes ?? 0);
+            } catch (error) {
+                console.error('Failed to load feedback counts', error);
+                updateCountLabels('Error', 'Error'); // Indicate an error in the UI
+            }
+        }
+
+        async function recordFeedback(type) {
+            if (!currentWebsite) {
+                return;
+            }
+            const docRef = feedbackCollection.doc(sanitizeKey(currentWebsite));
+            const updatePayload = type === 'like'
+                ? { likes: firebase.firestore.FieldValue.increment(1) }
+                : { dislikes: firebase.firestore.FieldValue.increment(1) };
+            try {
+                // Use { merge: true } to create the document if it doesn't exist, or update if it does.
+                // This works well with increment operations.
+                await docRef.set(updatePayload, { merge: true });
+                await refreshCounts(); // Refresh counts after successful update
+            } catch (error) {
+                console.error('Failed to save feedback', error);
+                alert('Failed to record feedback. Please check your internet connection or Firebase permissions.'); // User feedback
+            }
+        }
+
+        likeBtn.addEventListener('click', () => recordFeedback('like'));
+        dislikeBtn.addEventListener('click', () => recordFeedback('dislike'));
+
+        function loadRandomWebsite() {
+            const randomIndex = Math.floor(Math.random() * websites.length);
+            currentWebsite = websites[randomIndex];
+            iframe.src = currentWebsite;
+            display.textContent = `Displaying: ${currentWebsite}`;
+            refreshCounts(); // Load counts for the newly displayed website
+        }
+
+        // Load a random website and its counts when the page first loads
         window.onload = loadRandomWebsite;
 
     </script>
