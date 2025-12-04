@@ -361,13 +361,17 @@
         const dislikeCountEl = document.getElementById('dislike-count');
 
         // --- START OF FIREBASE CONFIGURATION (YOU MUST UPDATE THESE PLACEHOLDERS) ---
+        import { initializeApp } from "firebase/app";
+        import { getAnalytics } from "firebase/analytics";
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY_FROM_CONSOLE", // <<< IMPORTANT: Replace with your actual API Key
-            authDomain: "betterweb-b827e.firebaseapp.com",
-            projectId: "betterweb-b827e",
-            storageBucket: "betterweb-b827e.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID_FROM_CONSOLE", // <<< IMPORTANT: Replace with your actual Messaging Sender ID
-            appId: "YOUR_APP_ID_FROM_CONSOLE" // <<< IMPORTANT: Replace with your actual App ID
+             apiKey: "AIzaSyAVBwhZD8bmWhSG8aZ8OG38ldHJ3HyEa9o",
+             authDomain: "betterweb-b827e.firebaseapp.com",
+             databaseURL: "https://betterweb-b827e-default-rtdb.europe-west1.firebasedatabase.app",
+             projectId: "betterweb-b827e",
+             storageBucket: "betterweb-b827e.firebasestorage.app",
+             messagingSenderId: "261517436084",
+             appId: "1:261517436084:web:ed929c5d7b9cde3e2c63e1",
+             measurementId: "G-G2VNFYW5ZJ"
         };
         // --- END OF FIREBASE CONFIGURATION ---
 
