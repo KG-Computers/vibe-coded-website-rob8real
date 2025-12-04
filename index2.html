@@ -9,6 +9,8 @@
             font-family: sans-serif;
             margin: 20px;
             text-align: center;
+            background-color: black; /* Your existing style */
+            color: rgb(255, 255, 255); /* Your existing style */
         }
 
         #website-container {
@@ -41,36 +43,17 @@
             font-size: 16px;
             border-radius: 5px;
             transition: background-color 0.3s;
+            margin-top: 10px; /* Added some margin for buttons */
         }
 
         button:hover {
             background-color: #27ae60;
         }
-        .feedback-controls {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            align-items: center;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
 
-        .feedback-counts {
-            display: flex;
-            gap: 12px;
+        #counterDisplay {
+            margin-top: 15px;
+            font-size: 1.2em;
             font-weight: bold;
-        }
-
-        .feedback-counts span {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 6px 12px;
-            border-radius: 4px;
-        }
-        body {
-            background-color: black;
-        }
-        body {
-            color: rgb(255, 255, 255);
         }
     </style>
 </head>
@@ -78,7 +61,7 @@
 
     <h1>Betterweb scroll</h1>
     <a href="index">home pag</a>
-    <p>Click the button to find what you ware looking for</p>
+    <p>Click the button to find what you are looking for</p>
 
     <button onclick="loadRandomWebsite()">Scroll</button>
 
@@ -86,21 +69,17 @@
         <div id="current-website-display">&nbsp;</div>
         <iframe id="website-iframe" src="" title="Random Website Viewer"></iframe>
     </div>
-    <div class="feedback-controls">
-        <button id="like-btn">Like</button>
-        <button id="dislike-btn">Dislike</button>
-        <div class="feedback-counts">
-            <span id="like-count">Likes: --</span>
-            <span id="dislike-count">Dislikes: --</span>
-        </div>
-    </div>
+
+    <!-- Your "Press me" button -->
+    <button id="2">Press me</button>
+    <!-- New element to display the counter -->
+    <p id="counterDisplay">Loading count...</p>
+    
     <p>Some websites might be banned on school wifi or not work anymore</p>
 
-    <!-- Firebase SDKs - you've already included these! -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script>
         const websites = [
+            // Your existing list of websites
             "https://fonts.googleapis.com", "https://facebook.com", "https://twitter.com", "https://google.com",
             "https://youtube.com", "https://s.w.org", "https://instagram.com", "https://googletagmanager.com",
             "https://linkedin.com", "https://ajax.googleapis.com", "https://plus.google.com", "https://gmpg.org",
@@ -264,7 +243,7 @@
             "https://bandcamp.com", "https://br.linkedin.com", "https://gopro.com", "https://t.ly",
             "https://get.adobe.com", "https://news.mit.edu", "https://billboard.com", "https://britannica.com",
             "https://onlinelibrary.wiley.com", "https://techsmith.com", "https://sfgate.com", "https://redbubble.com",
-            "https://kstatic.googleusercontent.com", "https://repubblica.it", "https://disqus.com", "https://khanacademy.org",
+            "https://kstatic.googleusercontent.com", "https://repubblica.it", "https://disqus.com", "https://khanacademy.com",
             "https://skfb.ly", "https://androidauthority.com", "https://accessify.com", "https://tensorflow.org",
             "https://chrisjdavis.org", "https://box.net", "https://poetryfoundation.org", "https://law.cornell.edu",
             "https://penguinrandomhouse.com", "https://refinery29.com", "https://starwars.com", "https://fr.linkedin.com",
@@ -351,104 +330,93 @@
             "https://thinkgeek.com", "https://snip.ly", "https://pixiv.net", "https://buzzsprout.com",
             "https://patents.google.com", "https://orcid.org", "https://cdn.ampproject.org", "https://blog.feedspot.com",
             "https://vr.google.com", "https://opinionator.blogs.nytimes.com", "https://ericsson.com"
+            // End of your existing list
         ];
-
-        const iframe = document.getElementById('website-iframe');
-        const display = document.getElementById('current-website-display');
-        const likeBtn = document.getElementById('like-btn');
-        const dislikeBtn = document.getElementById('dislike-btn');
-        const likeCountEl = document.getElementById('like-count');
-        const dislikeCountEl = document.getElementById('dislike-count');
-
-        // --- START OF FIREBASE CONFIGURATION (YOU MUST UPDATE THESE PLACEHOLDERS) ---
-        import { initializeApp } from "firebase/app";
-        import { getAnalytics } from "firebase/analytics";
-        const firebaseConfig = {
-             apiKey: "AIzaSyAVBwhZD8bmWhSG8aZ8OG38ldHJ3HyEa9o",
-             authDomain: "betterweb-b827e.firebaseapp.com",
-             databaseURL: "https://betterweb-b827e-default-rtdb.europe-west1.firebasedatabase.app",
-             projectId: "betterweb-b827e",
-             storageBucket: "betterweb-b827e.firebasestorage.app",
-             messagingSenderId: "261517436084",
-             appId: "1:261517436084:web:ed929c5d7b9cde3e2c63e1",
-             measurementId: "G-G2VNFYW5ZJ"
-        };
-        // --- END OF FIREBASE CONFIGURATION ---
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const feedbackCollection = db.collection('websiteFeedback');
-
-        let currentWebsite = null;
-
-        function sanitizeKey(url) {
-            // Replaces non-alphanumeric characters with underscores to create a valid Firestore document ID
-            return url.replace(/[^a-zA-Z0-9]/g, '_');
-        }
-
-        function updateCountLabels(likes, dislikes) {
-            likeCountEl.textContent = `Likes: ${likes}`;
-            dislikeCountEl.textContent = `Dislikes: ${dislikes}`;
-        }
-
-        async function ensureDocument(docRef) {
-            const snapshot = await docRef.get();
-            if (!snapshot.exists) {
-                // If the document doesn't exist, create it with initial counts
-                await docRef.set({ likes: 0, dislikes: 0 });
-                return { likes: 0, dislikes: 0 };
-            }
-            return snapshot.data();
-        }
-
-        async function refreshCounts() {
-            if (!currentWebsite) {
-                updateCountLabels('--', '--');
-                return;
-            }
-            try {
-                const docRef = feedbackCollection.doc(sanitizeKey(currentWebsite));
-                const data = await ensureDocument(docRef); // Ensure document exists before trying to read data
-                updateCountLabels(data.likes ?? 0, data.dislikes ?? 0);
-            } catch (error) {
-                console.error('Failed to load feedback counts', error);
-                updateCountLabels('Error', 'Error'); // Indicate an error in the UI
-            }
-        }
-
-        async function recordFeedback(type) {
-            if (!currentWebsite) {
-                return;
-            }
-            const docRef = feedbackCollection.doc(sanitizeKey(currentWebsite));
-            const updatePayload = type === 'like'
-                ? { likes: firebase.firestore.FieldValue.increment(1) }
-                : { dislikes: firebase.firestore.FieldValue.increment(1) };
-            try {
-                // Use { merge: true } to create the document if it doesn't exist, or update if it does.
-                // This works well with increment operations.
-                await docRef.set(updatePayload, { merge: true });
-                await refreshCounts(); // Refresh counts after successful update
-            } catch (error) {
-                console.error('Failed to save feedback', error);
-                alert('Failed to record feedback. Please check your internet connection or Firebase permissions.'); // User feedback
-            }
-        }
-
-        likeBtn.addEventListener('click', () => recordFeedback('like'));
-        dislikeBtn.addEventListener('click', () => recordFeedback('dislike'));
 
         function loadRandomWebsite() {
             const randomIndex = Math.floor(Math.random() * websites.length);
-            currentWebsite = websites[randomIndex];
-            iframe.src = currentWebsite;
-            display.textContent = `Displaying: ${currentWebsite}`;
-            refreshCounts(); // Load counts for the newly displayed website
+            const randomUrl = websites[randomIndex];
+            const iframe = document.getElementById('website-iframe');
+            iframe.src = randomUrl;
+            const display = document.getElementById('current-website-display');
+            display.textContent = `Displaying: ${randomUrl}`;
         }
 
-        // Load a random website and its counts when the page first loads
+        // Load a random website when the page first loads
         window.onload = loadRandomWebsite;
 
+    </script>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
+        // Import Realtime Database functions
+        import { getDatabase, ref, update, ServerValue, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAVBwhZD8bmWhSG8aZ8OG38ldHJ3HyEa9o",
+            authDomain: "betterweb-b827e.firebaseapp.com",
+            databaseURL: "https://betterweb-b827e-default-rtdb.europe-west1.firebasedatabase.app", // Using your provided URL
+            projectId: "betterweb-b827e",
+            storageBucket: "betterweb-b827e.firebasestorage.app",
+            messagingSenderId: "261517436084",
+            appId: "1:261517436084:web:ed929c5d7b9cde3e2c63e1",
+            measurementId: "G-G2VNFYW5ZJ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase(app); // Initialize Realtime Database
+
+        // Get references to the button and the display element
+        const pressMeButton = document.getElementById('2');
+        const counterDisplayElement = document.getElementById('counterDisplay');
+
+        // Define the path for our counter in the Realtime Database
+        // We'll store it under 'buttonClicks/pressMeCount'
+        const parentCounterRef = ref(database, 'buttonClicks');
+        const counterKey = 'pressMeCount';
+
+        // --- Set up a real-time listener for the counter ---
+        // This will update the display whenever the count changes in the database
+        onValue(ref(database, `buttonClicks/${counterKey}`), (snapshot) => {
+            const currentCount = snapshot.val();
+            if (counterDisplayElement) {
+                // If the count is null (doesn't exist yet), display 0
+                counterDisplayElement.textContent = `Button pressed: ${currentCount !== null ? currentCount : 0} times`;
+            }
+        }, (error) => {
+            console.error("Error reading counter:", error);
+            if (counterDisplayElement) {
+                counterDisplayElement.textContent = "Error loading count.";
+            }
+        });
+
+        // --- Function to increment the counter ---
+        function incrementPressMeCounter() {
+            // Use ServerValue.increment(1) to atomically increase the count
+            // This is safe for concurrent updates from multiple users.
+            update(parentCounterRef, {
+                [counterKey]: ServerValue.increment(1)
+            })
+            .then(() => {
+                console.log("Counter incremented successfully!");
+            })
+            .catch((error) => {
+                console.error("Error incrementing counter:", error);
+                alert("Failed to increment counter. Please check the console for details. Also, check your Firebase Realtime Database Security Rules!");
+            });
+        }
+
+        // Attach the increment function to the "Press me" button's click event
+        if (pressMeButton) {
+            pressMeButton.addEventListener('click', incrementPressMeCounter);
+        } else {
+            console.warn("Button with ID '2' not found.");
+        }
     </script>
 </body>
 </html>
