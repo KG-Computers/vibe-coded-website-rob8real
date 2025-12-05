@@ -52,13 +52,23 @@
         body {
             color: rgb(255, 255, 255);
         }
+        .rating-container {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
     </style>
+    <!-- Firebase SDK (Place this in the head or right before the closing </body> tag) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
     <h1>Betterweb scroll</h1>
     <a href="index">home pag</a>
-    <p>Click the button to find what you ware looking for</p>
+    <p>Click the button to find what you are looking for</p>
 
     <button onclick="loadRandomWebsite()">Scroll</button>
 
@@ -66,30 +76,25 @@
         <div id="current-website-display">&nbsp;</div>
         <iframe id="website-iframe" src="" title="Random Website Viewer"></iframe>
     </div>
-    <button id="pressMeButton">Press me</button> <span id="pressMeCountDisplay">Loading...</span>
+    
+    <div class="rating-container">
+        <button id="like-button" onclick="updateRating('like')">Like</button> <span id="likes-count">0</span>
+        <button id="dislike-button" onclick="updateRating('dislike')">Dislike</button> <span id="dislikes-count">0</span>
+    </div>
     <p>Some websites might be banned on school wifi or not work anymore</p>
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script>
-        // Your Firebase project configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        // Firebase Configuration (replace with your actual config from Firebase Console)
         const firebaseConfig = {
-          apiKey: "AIzaSyAVBwhZD8bmWhSG8aZ8OG38ldHJ3HyEa9o",
-          authDomain: "betterweb-b827e.firebaseapp.com",
-          databaseURL: "https://betterweb-b827e-default-rtdb.europe-west1.firebasedatabase.app",
-          projectId: "betterweb-b827e",
-          storageBucket: "betterweb-b827e.firebasestorage.app",
-          messagingSenderId: "261517436084",
-          appId: "1:261517436084:web:ed929c5d7b9cde3e2c63e1",
-          measurementId: "G-G2VNFYW5ZJ"
+            projectId: "betterweb-b827e", // Your project ID
+            // Other config properties can be added here if needed, but for Firestore basic usage, project ID is often enough if defaults are used.
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const pressMeRef = db.collection("app_counters").doc("pressMeButtonCount");
+
+        let currentWebsiteUrl = ''; // To keep track of the currently displayed website
 
         const websites = [
             "https://fonts.googleapis.com", "https://facebook.com", "https://twitter.com", "https://google.com",
@@ -344,12 +349,31 @@
             "https://vr.google.com", "https://opinionator.blogs.nytimes.com", "https://ericsson.com"
         ];
 
-        function loadRandomWebsite() {
+        async function fetchWebsiteRatings(url) {
+            const encodedUrl = btoa(url); // Encode URL for Firestore document ID
+            const websiteRef = db.collection('website_ratings').doc(encodedUrl);
+            const doc = await websiteRef.get();
+
+            let likes = 0;
+            let dislikes = 0;
+
+            if (doc.exists) {
+                const data = doc.data();
+                likes = data.likes || 0;
+                dislikes = data.dislikes || 0;
+            }
+
+            document.getElementById('likes-count').textContent = likes;
+            document.getElementById('dislikes-count').textContent = dislikes;
+        }
+
+        async function loadRandomWebsite() {
             // Select a random index
             const randomIndex = Math.floor(Math.random() * websites.length);
 
             // Get the random URL
             const randomUrl = websites[randomIndex];
+            currentWebsiteUrl = randomUrl; // Store the current URL globally
 
             // Update the iframe source
             const iframe = document.getElementById('website-iframe');
@@ -358,53 +382,46 @@
             // Update the display text
             const display = document.getElementById('current-website-display');
             display.textContent = `Displaying: ${randomUrl}`;
+
+            // Fetch and display ratings for the new website
+            await fetchWebsiteRatings(randomUrl);
         }
 
-        // Function to load the counter value from Firestore
-        async function loadPressMeCount() {
-            try {
-                const doc = await pressMeRef.get();
-                let count = 0;
-                if (doc.exists) {
-                    count = doc.data().count || 0; // Get existing count or default to 0
-                } else {
-                    // If document doesn't exist, create it with initial count 0
-                    await pressMeRef.set({ count: 0 });
-                }
-                document.getElementById('pressMeCountDisplay').textContent = count;
-            } catch (error) {
-                console.error("Error loading press me count: ", error);
-                document.getElementById('pressMeCountDisplay').textContent = "Error";
-            }
-        }
+        async function updateRating(type) {
+            if (!currentWebsiteUrl) return; // Do nothing if no website is loaded
 
-        // Function to increment the counter in Firestore
-        async function incrementPressMeCount() {
+            const encodedUrl = btoa(currentWebsiteUrl);
+            const websiteRef = db.collection('website_ratings').doc(encodedUrl);
+
             try {
-                await pressMeRef.update({
-                    count: firebase.firestore.FieldValue.increment(1)
+                // Use a transaction for safe incrementing
+                await db.runTransaction(async (transaction) => {
+                    const sfDoc = await transaction.get(websiteRef);
+                    if (!sfDoc.exists) {
+                        // If document doesn't exist, create it with initial counts
+                        if (type === 'like') {
+                            transaction.set(websiteRef, { likes: 1, dislikes: 0 });
+                        } else {
+                            transaction.set(websiteRef, { likes: 0, dislikes: 1 });
+                        }
+                    } else {
+                        // If document exists, increment the appropriate field
+                        const newLikes = (sfDoc.data().likes || 0) + (type === 'like' ? 1 : 0);
+                        const newDislikes = (sfDoc.data().dislikes || 0) + (type === 'dislike' ? 1 : 0);
+                        transaction.update(websiteRef, { likes: newLikes, dislikes: newDislikes });
+                    }
                 });
-                // Optimistically update display (or re-fetch for absolute accuracy)
-                const currentCount = parseInt(document.getElementById('pressMeCountDisplay').textContent);
-                if (!isNaN(currentCount)) {
-                    document.getElementById('pressMeCountDisplay').textContent = currentCount + 1;
-                } else {
-                    loadPressMeCount(); // Fallback in case of error parsing or initial load issues
-                }
+                console.log("Rating updated successfully!");
+                // Refresh displayed counts after successful update
+                await fetchWebsiteRatings(currentWebsiteUrl);
             } catch (error) {
-                console.error("Error incrementing press me count: ", error);
-                document.getElementById('pressMeCountDisplay').textContent = "Error";
+                console.error("Error updating rating:", error);
+                alert("Failed to update rating. Please try again.");
             }
         }
 
         // Load a random website when the page first loads
-        window.onload = () => {
-            loadRandomWebsite();
-            loadPressMeCount(); // Also load the counter when the page loads
-        };
-
-        // Attach event listener to the "Press me" button
-        document.getElementById('pressMeButton').addEventListener('click', incrementPressMeCount);
+        window.onload = loadRandomWebsite;
 
     </script>
 </body>
