@@ -9,8 +9,6 @@
             font-family: sans-serif;
             margin: 20px;
             text-align: center;
-            background-color: black; /* Your existing style */
-            color: rgb(255, 255, 255); /* Your existing style */
         }
 
         #website-container {
@@ -43,17 +41,16 @@
             font-size: 16px;
             border-radius: 5px;
             transition: background-color 0.3s;
-            margin-top: 10px; /* Added some margin for buttons */
         }
 
         button:hover {
             background-color: #27ae60;
         }
-
-        #counterDisplay {
-            margin-top: 15px;
-            font-size: 1.2em;
-            font-weight: bold;
+        body {
+            background-color: black;
+        }
+        body {
+            color: rgb(255, 255, 255);
         }
     </style>
 </head>
@@ -61,7 +58,7 @@
 
     <h1>Betterweb scroll</h1>
     <a href="index">home pag</a>
-    <p>Click the button to find what you are looking for</p>
+    <p>Click the button to find what you ware looking for</p>
 
     <button onclick="loadRandomWebsite()">Scroll</button>
 
@@ -69,17 +66,32 @@
         <div id="current-website-display">&nbsp;</div>
         <iframe id="website-iframe" src="" title="Random Website Viewer"></iframe>
     </div>
-
-    <!-- Your "Press me" button -->
-    <button id="2">Press me</button>
-    <!-- New element to display the counter -->
-    <p id="counterDisplay">Loading count...</p>
-    
+    <button id="pressMeButton">Press me</button> <span id="pressMeCountDisplay">Loading...</span>
     <p>Some websites might be banned on school wifi or not work anymore</p>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script>
+        // Your Firebase project configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+          apiKey: "AIzaSyAVBwhZD8bmWhSG8aZ8OG38ldHJ3HyEa9o",
+          authDomain: "betterweb-b827e.firebaseapp.com",
+          databaseURL: "https://betterweb-b827e-default-rtdb.europe-west1.firebasedatabase.app",
+          projectId: "betterweb-b827e",
+          storageBucket: "betterweb-b827e.firebasestorage.app",
+          messagingSenderId: "261517436084",
+          appId: "1:261517436084:web:ed929c5d7b9cde3e2c63e1",
+          measurementId: "G-G2VNFYW5ZJ"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const pressMeRef = db.collection("app_counters").doc("pressMeButtonCount");
+
         const websites = [
-            // Your existing list of websites
             "https://fonts.googleapis.com", "https://facebook.com", "https://twitter.com", "https://google.com",
             "https://youtube.com", "https://s.w.org", "https://instagram.com", "https://googletagmanager.com",
             "https://linkedin.com", "https://ajax.googleapis.com", "https://plus.google.com", "https://gmpg.org",
@@ -243,7 +255,7 @@
             "https://bandcamp.com", "https://br.linkedin.com", "https://gopro.com", "https://t.ly",
             "https://get.adobe.com", "https://news.mit.edu", "https://billboard.com", "https://britannica.com",
             "https://onlinelibrary.wiley.com", "https://techsmith.com", "https://sfgate.com", "https://redbubble.com",
-            "https://kstatic.googleusercontent.com", "https://repubblica.it", "https://disqus.com", "https://khanacademy.com",
+            "https://kstatic.googleusercontent.com", "https://repubblica.it", "https://disqus.com", "https://khanacademy.org",
             "https://skfb.ly", "https://androidauthority.com", "https://accessify.com", "https://tensorflow.org",
             "https://chrisjdavis.org", "https://box.net", "https://poetryfoundation.org", "https://law.cornell.edu",
             "https://penguinrandomhouse.com", "https://refinery29.com", "https://starwars.com", "https://fr.linkedin.com",
@@ -330,93 +342,70 @@
             "https://thinkgeek.com", "https://snip.ly", "https://pixiv.net", "https://buzzsprout.com",
             "https://patents.google.com", "https://orcid.org", "https://cdn.ampproject.org", "https://blog.feedspot.com",
             "https://vr.google.com", "https://opinionator.blogs.nytimes.com", "https://ericsson.com"
-            // End of your existing list
         ];
 
         function loadRandomWebsite() {
+            // Select a random index
             const randomIndex = Math.floor(Math.random() * websites.length);
+
+            // Get the random URL
             const randomUrl = websites[randomIndex];
+
+            // Update the iframe source
             const iframe = document.getElementById('website-iframe');
             iframe.src = randomUrl;
+
+            // Update the display text
             const display = document.getElementById('current-website-display');
             display.textContent = `Displaying: ${randomUrl}`;
         }
 
+        // Function to load the counter value from Firestore
+        async function loadPressMeCount() {
+            try {
+                const doc = await pressMeRef.get();
+                let count = 0;
+                if (doc.exists) {
+                    count = doc.data().count || 0; // Get existing count or default to 0
+                } else {
+                    // If document doesn't exist, create it with initial count 0
+                    await pressMeRef.set({ count: 0 });
+                }
+                document.getElementById('pressMeCountDisplay').textContent = count;
+            } catch (error) {
+                console.error("Error loading press me count: ", error);
+                document.getElementById('pressMeCountDisplay').textContent = "Error";
+            }
+        }
+
+        // Function to increment the counter in Firestore
+        async function incrementPressMeCount() {
+            try {
+                await pressMeRef.update({
+                    count: firebase.firestore.FieldValue.increment(1)
+                });
+                // Optimistically update display (or re-fetch for absolute accuracy)
+                const currentCount = parseInt(document.getElementById('pressMeCountDisplay').textContent);
+                if (!isNaN(currentCount)) {
+                    document.getElementById('pressMeCountDisplay').textContent = currentCount + 1;
+                } else {
+                    loadPressMeCount(); // Fallback in case of error parsing or initial load issues
+                }
+            } catch (error) {
+                console.error("Error incrementing press me count: ", error);
+                document.getElementById('pressMeCountDisplay').textContent = "Error";
+            }
+        }
+
         // Load a random website when the page first loads
-        window.onload = loadRandomWebsite;
-
-    </script>
-
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
-        // Import Realtime Database functions
-        import { getDatabase, ref, update, ServerValue, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
-
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAVBwhZD8bmWhSG8aZ8OG38ldHJ3HyEa9o",
-            authDomain: "betterweb-b827e.firebaseapp.com",
-            databaseURL: "https://betterweb-b827e-default-rtdb.europe-west1.firebasedatabase.app", // Using your provided URL
-            projectId: "betterweb-b827e",
-            storageBucket: "betterweb-b827e.firebasestorage.app",
-            messagingSenderId: "261517436084",
-            appId: "1:261517436084:web:ed929c5d7b9cde3e2c63e1",
-            measurementId: "G-G2VNFYW5ZJ"
+        window.onload = () => {
+            loadRandomWebsite();
+            loadPressMeCount(); // Also load the counter when the page loads
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const database = getDatabase(app); // Initialize Realtime Database
+        // Attach event listener to the "Press me" button
+        document.getElementById('pressMeButton').addEventListener('click', incrementPressMeCount);
 
-        // Get references to the button and the display element
-        const pressMeButton = document.getElementById('2');
-        const counterDisplayElement = document.getElementById('counterDisplay');
-
-        // Define the path for our counter in the Realtime Database
-        // We'll store it under 'buttonClicks/pressMeCount'
-        const parentCounterRef = ref(database, 'buttonClicks');
-        const counterKey = 'pressMeCount';
-
-        // --- Set up a real-time listener for the counter ---
-        // This will update the display whenever the count changes in the database
-        onValue(ref(database, `buttonClicks/${counterKey}`), (snapshot) => {
-            const currentCount = snapshot.val();
-            if (counterDisplayElement) {
-                // If the count is null (doesn't exist yet), display 0
-                counterDisplayElement.textContent = `Button pressed: ${currentCount !== null ? currentCount : 0} times`;
-            }
-        }, (error) => {
-            console.error("Error reading counter:", error);
-            if (counterDisplayElement) {
-                counterDisplayElement.textContent = "Error loading count.";
-            }
-        });
-
-        // --- Function to increment the counter ---
-        function incrementPressMeCounter() {
-            // Use ServerValue.increment(1) to atomically increase the count
-            // This is safe for concurrent updates from multiple users.
-            update(parentCounterRef, {
-                [counterKey]: ServerValue.increment(1)
-            })
-            .then(() => {
-                console.log("Counter incremented successfully!");
-            })
-            .catch((error) => {
-                console.error("Error incrementing counter:", error);
-                alert("Failed to increment counter. Please check the console for details. Also, check your Firebase Realtime Database Security Rules!");
-            });
-        }
-
-        // Attach the increment function to the "Press me" button's click event
-        if (pressMeButton) {
-            pressMeButton.addEventListener('click', incrementPressMeCounter);
-        } else {
-            console.warn("Button with ID '2' not found.");
-        }
     </script>
 </body>
 </html>
