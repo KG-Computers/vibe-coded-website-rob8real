@@ -63,6 +63,8 @@
     <!-- Firebase SDK (Place this in the head or right before the closing </body> tag) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="https://unpkg.com/@ungap/custom-elements-builtin"></script>
+	<script src="x-frame-bypass.js" type="module"></script>
 </head>
 <body>
 
@@ -74,7 +76,7 @@
 
     <div id="website-container">
         <div id="current-website-display">&nbsp;</div>
-        <iframe id="website-iframe" src="" title="Random Website Viewer"></iframe>
+        <iframe id="website-iframe" is="x-frame-bypass" src="" title="Random Website Viewer"></iframe>
     </div>
     
     <div class="rating-container">
