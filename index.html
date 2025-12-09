@@ -41,11 +41,18 @@
             font-size: 16px;
             border-radius: 5px;
             transition: background-color 0.3s;
+            margin: 5px; /* Added some margin for better button spacing */
         }
 
-        button:hover {
+        button:hover:not(:disabled) { /* Apply hover effect only if not disabled */
             background-color: #27ae60;
         }
+        
+        button:disabled {
+            background-color: #666; /* Grey out disabled buttons */
+            cursor: not-allowed;
+        }
+
         body {
             background-color: black;
         }
@@ -72,7 +79,8 @@
     <a href="sites.html">List of websites</a>
     <p>Click the button to find what you are looking for</p>
 
-    <button onclick="loadRandomWebsite()">Scroll</button>
+    <button id="scroll-button" onclick="loadRandomWebsite()">Scroll</button>
+    <button id="copy-link-button" onclick="copyWebsiteLink()">Copy Link</button>
 
     <div id="website-container">
         <div id="current-website-display">&nbsp;</div>
@@ -97,6 +105,8 @@
         const db = firebase.firestore();
 
         let currentWebsiteUrl = ''; // To keep track of the currently displayed website
+        let canLoadNewWebsite = true; // Flag to control website loading
+        let adTimeoutId = null; // To store the timeout ID for ads
 
         const websites = [
             "https://fonts.googleapis.com", "https://facebook.com", "https://twitter.com", "https://google.com",
@@ -370,27 +380,66 @@
         }
 
         async function loadRandomWebsite() {
-            // Select a random index
-            const randomIndex = Math.floor(Math.random() * websites.length);
+            if (!canLoadNewWebsite) {
+                alert("An advertisement is currently playing. Please wait!");
+                return;
+            }
 
-            // Get the random URL
-            const randomUrl = websites[randomIndex];
-            currentWebsiteUrl = randomUrl; // Store the current URL globally
-
-            // Update the iframe source
+            const adChance = Math.random(); // Generate a random number between 0 and 1
             const iframe = document.getElementById('website-iframe');
-            iframe.src = randomUrl;
-
-            // Update the display text
             const display = document.getElementById('current-website-display');
-            display.textContent = `Displaying: ${randomUrl}`;
+            const scrollButton = document.getElementById('scroll-button');
+            const likeButton = document.getElementById('like-button');
+            const dislikeButton = document.getElementById('dislike-button');
+            const copyLinkButton = document.getElementById('copy-link-button');
 
-            // Fetch and display ratings for the new website
-            await fetchWebsiteRatings(randomUrl);
+            if (adChance < 0.25) { // 25% chance for ad.html
+                // *** MODIFIED LINE HERE ***
+                currentWebsiteUrl = 'https://haydenswebsite.com/ad.html'; 
+                iframe.src = currentWebsiteUrl;
+                display.textContent = `Displaying: An important message... (Ad playing for 15 seconds)`;
+
+                // Disable buttons
+                canLoadNewWebsite = false;
+                scrollButton.disabled = true;
+                likeButton.disabled = true;
+                dislikeButton.disabled = true;
+                copyLinkButton.disabled = true;
+
+                // Clear ratings display for the ad
+                document.getElementById('likes-count').textContent = 'N/A';
+                document.getElementById('dislikes-count').textContent = 'N/A';
+
+                adTimeoutId = setTimeout(() => {
+                    canLoadNewWebsite = true;
+                    scrollButton.disabled = false;
+                    likeButton.disabled = false;
+                    dislikeButton.disabled = false;
+                    copyLinkButton.disabled = false;
+                    
+                    iframe.src = ""; // Clear the ad iframe
+                    display.textContent = `Advertisement finished. Ready to scroll!`;
+                    currentWebsiteUrl = ""; // Reset currentWebsiteUrl after ad
+                }, 15000); // 15 seconds
+            } else {
+                // Existing logic for loading a random website
+                const randomIndex = Math.floor(Math.random() * websites.length);
+                const randomUrl = websites[randomIndex];
+                currentWebsiteUrl = randomUrl;
+
+                iframe.src = randomUrl;
+                display.textContent = `Displaying: ${randomUrl}`;
+
+                // Fetch and display ratings for the new website
+                await fetchWebsiteRatings(randomUrl);
+            }
         }
 
         async function updateRating(type) {
-            if (!currentWebsiteUrl) return; // Do nothing if no website is loaded
+            if (!currentWebsiteUrl || currentWebsiteUrl === 'https://haydenswebsite.com/ad.html') {
+                alert("Cannot rate an ad or if no website is loaded.");
+                return; // Do nothing if no website is loaded or if it's an ad
+            }
 
             const encodedUrl = btoa(currentWebsiteUrl);
             const websiteRef = db.collection('website_ratings').doc(encodedUrl);
@@ -420,6 +469,25 @@
                 console.error("Error updating rating:", error);
                 alert("Failed to update rating. Please try again.");
             }
+        }
+
+        /**
+         * Copies the current website URL to the clipboard.
+         */
+        function copyWebsiteLink() {
+            if (!currentWebsiteUrl || currentWebsiteUrl === 'https://haydenswebsite.com/ad.html') {
+                alert("No website link to copy, or an ad is playing.");
+                return;
+            }
+
+            navigator.clipboard.writeText(currentWebsiteUrl)
+                .then(() => {
+                    alert("Website link copied to clipboard!");
+                })
+                .catch(err => {
+                    console.error("Failed to copy link: ", err);
+                    alert("Failed to copy link. Please try again or copy manually.");
+                });
         }
 
         // Load a random website when the page first loads

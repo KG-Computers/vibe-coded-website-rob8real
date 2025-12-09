@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AD</title>
+    <h1>Advertisement</h1>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Make body take at least full viewport height */
+            transition: background-color 0.05s ease-in-out; /* Smooth transition for color changes */
+            color: white; /* Ensure text is visible on dark/light backgrounds */
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+        let intervalId;
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        function setRandomBackgroundColor() {
+            document.body.style.backgroundColor = getRandomColor();
+        }
+
+        function startFlashing() {
+            intervalId = setInterval(setRandomBackgroundColor, 100); // Change color every 100ms
+        }
+
+        // Start flashing automatically when the page loads
+        window.onload = startFlashing;
+    </script>
+
+</body>
+</html>
