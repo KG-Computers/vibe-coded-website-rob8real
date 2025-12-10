@@ -66,6 +66,15 @@
             align-items: center;
             gap: 10px;
         }
+            .premium {
+      animation: blinker 1s linear infinite;
+    }
+
+    @keyframes blinker {
+      50% {
+        opacity: 0;
+      }
+    }
     </style>
     <!-- Firebase SDK (Place this in the head or right before the closing </body> tag) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -75,7 +84,7 @@
 </head>
 <body>
 
-    <h1>Scroll through the internet.</h1>
+    <h2>Scroll through the internet.</h2>
     <a href="sites.html">List of websites</a>
     <p>Click the button to find what you are looking for</p>
 
@@ -92,6 +101,7 @@
         <button id="dislike-button" onclick="updateRating('dislike')">Dislike</button> <span id="dislikes-count">0</span>
     </div>
     <p>Some websites might be banned on school wifi or not work anymore...</p>
+    <a href="premium.html"><h1 class="premium">BUY PREMIUM NOW!!! BUY PREMIUM NOW!!! BUY PREMIUM NOW!!! BUY PREMIUM NOW!!! BUY PREMIUM NOW!!! </h1></a>
 
     <script>
         // Firebase Configuration (replace with your actual config from Firebase Console)
