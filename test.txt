@@ -1,0 +1,46 @@
+index.html:194 No user signed in on page load.
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+(anonymous) @ index.html:145
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+(anonymous) @ index.html:145
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+(anonymous) @ index.html:145
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+(anonymous) @ index.html:145
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+(anonymous) @ index.html:145
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+(anonymous) @ index.html:145
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+(anonymous) @ index.html:145
+index.html:145  Uncaught (in promise) ReferenceError: passwordInputInput is not defined
+    at HTMLButtonElement.<anonymous> (index.html:145:30)
+(anonymous) @ index.html:145

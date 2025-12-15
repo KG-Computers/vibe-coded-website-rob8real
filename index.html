@@ -76,7 +76,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+        // Make sure to import signOut from firebase/auth
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
         // If you are using Firestore on the 'scroll.html' page, you might also need:
         // import { getFirestore } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
@@ -100,7 +101,7 @@
         const emailInput = document.getElementById("emailInput");
         const passwordInput = document.getElementById("passwordInput");
         const signInButton = document.getElementById("signInButton");
-        const signUpButton = document.getElementById("signUpButton"); // Get the new sign-up button
+        const signUpButton = document.getElementById("signUpButton");
         const authErrorMessage = document.getElementById("auth-error-message");
 
         // Function to handle authentication success and redirection
@@ -122,13 +123,13 @@
                     break;
                 case "auth/user-not-found":
                 case "auth/wrong-password":
-                case "auth/invalid-credential": // Added for comprehensive error handling
+                case "auth/invalid-credential":
                     message = "Incorrect email or password.";
                     break;
-                case "auth/email-already-in-use": // Specific error for sign-up
+                case "auth/email-already-in-use":
                     message = "An account with this email already exists.";
                     break;
-                case "auth/weak-password": // Specific error for sign-up
+                case "auth/weak-password":
                     message = "Password should be at least 6 characters.";
                     break;
                 default:
@@ -141,7 +142,7 @@
         // Event listener for Sign In button
         signInButton.addEventListener("click", async () => {
             const email = emailInput.value;
-            const password = passwordInput.value;
+            const password = passwordInput.value; // Corrected typo here
             authErrorMessage.textContent = "";
 
             if (!email || !password) {
@@ -171,17 +172,26 @@
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 alert("Account created successfully!");
-                handleAuthSuccess(userCredential.user); // Redirect after successful creation
+                handleAuthSuccess(userCredential.user);
             } catch (error) {
                 handleAuthError(error);
             }
         });
 
-        // Optional: Auto-redirect if already signed in on page load
+        // Modified: Log out the user immediately if they are detected as signed in on page load
         auth.onAuthStateChanged((user) => {
             if (user) {
-                console.log("User already signed in, redirecting to scroll.html");
-                window.location.href = 'scroll.html';
+                console.log("User was signed in, logging out due to page refresh policy.");
+                // Sign out the user immediately
+                signOut(auth).then(() => {
+                    console.log("User successfully logged out on refresh.");
+                    // Optionally, you can display a message or redirect to a specific page
+                    // alert("You have been logged out.");
+                }).catch((error) => {
+                    console.error("Error logging out on refresh:", error);
+                });
+            } else {
+                console.log("No user signed in on page load.");
             }
         });
     </script>
